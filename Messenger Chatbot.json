@@ -1,0 +1,489 @@
+{
+  "name": "Messenger Chatbot",
+  "nodes": [
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "1685727e-7fd2-4ab2-b6db-ae7855b75b5c",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        544,
+        1040
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "kYlxXeoX0OqbBY8v",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "senderId",
+              "value": "={{ $json.entry[0].messaging[0].sender.id }}",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "recipientId",
+              "value": "={{ $json.entry[0].messaging[0].recipient.id }}",
+              "type": "string"
+            },
+            {
+              "id": "3",
+              "name": "messageText",
+              "value": "={{ $json.entry[0].messaging[0].message?.text ?? \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "4",
+              "name": "hasAttachments",
+              "value": "={{ $json.entry[0].messaging[0].message?.attachments?.length > 0 }}",
+              "type": "boolean"
+            },
+            {
+              "id": "5",
+              "name": "attachments",
+              "value": "={{ $json.entry[0].messaging[0].message?.attachments ?? [] }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "8a31958a-b21c-4adf-8c42-77432d8e272d",
+      "name": "Extract Message Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        96,
+        564
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{ $json.hasAttachments }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "eb35ffc7-026d-427c-803a-f1116ce91e80",
+      "name": "Check Message Type",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        320,
+        564
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.messageText }}",
+        "options": {
+          "systemMessage": "You are a helpful Facebook Messenger chatbot assistant. You can answer questions, provide information, and help users with various tasks. You have access to Wikipedia for factual information and Google Search for current information. Always be friendly, concise, and helpful in your responses.",
+          "maxIterations": 10,
+          "returnIntermediateSteps": false
+        }
+      },
+      "id": "0d21dfbb-639c-49f2-a7b8-6c6538cbec22",
+      "name": "Conversational Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        664,
+        816
+      ]
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.entry[0].messaging[0].sender.id }}",
+        "contextWindowLength": 10
+      },
+      "id": "5cd21338-0ff4-4445-baf7-5b2c1569a4c2",
+      "name": "Conversation Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        672,
+        1040
+      ]
+    },
+    {
+      "parameters": {
+        "options": {
+          "gl": "us",
+          "device": "desktop",
+          "no_cache": false,
+          "google_domain": "google.com",
+          "hl": "en"
+        }
+      },
+      "id": "7d41e725-6385-49db-afa3-39fe6b7564e6",
+      "name": "Google Search Tool",
+      "type": "@n8n/n8n-nodes-langchain.toolSerpApi",
+      "typeVersion": 1,
+      "position": [
+        800,
+        1040
+      ],
+      "credentials": {
+        "serpApi": {
+          "id": "WfeDGBMgonBO20mH",
+          "name": "SerpApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "demo",
+          "mode": "list",
+          "cachedResultName": "demo"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        928,
+        1040
+      ],
+      "id": "a95b8b41-2973-4c79-86d8-702c5cfc2eed",
+      "name": "Pinecone Vector Store",
+      "credentials": {
+        "pineconeApi": {
+          "id": "4NbswkYEoduuirxM",
+          "name": "Pinecone account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1008,
+        1248
+      ],
+      "id": "e9eb3faf-ba79-4010-a959-9e2a23dcc977",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "nM3REp4GSfKinieC",
+          "name": "OpenAI account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "path": "450f35d6-436c-4d54-b6e6-15cfa3c5a83b",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -128,
+        564
+      ],
+      "id": "e6dcb74a-5e5e-45d7-9907-57ddbf541f5f",
+      "name": "Webhook",
+      "webhookId": "450f35d6-436c-4d54-b6e6-15cfa3c5a83b"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1520,
+        564
+      ],
+      "id": "7fa25eb4-3e80-4f50-9082-410173d6846b",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1296,
+        312
+      ],
+      "id": "6554c3ca-150b-47b5-8a33-841e385223e8",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1296,
+        816
+      ],
+      "id": "6bee0bcc-8fe3-4a41-b93a-72144c1ba912",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        744,
+        208
+      ],
+      "id": "7a4102da-28a5-412e-bf99-22fef6fd8e64",
+      "name": "Image Analyzer"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        752,
+        432
+      ],
+      "id": "b7546fc7-291a-4bdf-a474-a1df52547433",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "nM3REp4GSfKinieC",
+          "name": "OpenAI account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.entry[0].messaging[0].sender.id }}",
+        "contextWindowLength": 10
+      },
+      "id": "fc5c12be-e636-4283-b5f7-780e5939a6c5",
+      "name": "Conversation Memory1",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        880,
+        432
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Conversational Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Message Data": {
+      "main": [
+        [
+          {
+            "node": "Check Message Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Message Type": {
+      "main": [
+        [
+          {
+            "node": "Image Analyzer",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Conversational Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversational Agent": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversation Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Conversational Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Search Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "Conversational Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "Conversational Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract Message Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Image Analyzer": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Image Analyzer",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversation Memory1": {
+      "ai_memory": [
+        [
+          {
+            "node": "Image Analyzer",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "a28a0d20-8010-46be-8839-466f5910b04d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ff0006fc908e706f73518b4e3db17d97601bf31f154a300d9a76d84e35a24bac"
+  },
+  "id": "T185dMkanytAogZC",
+  "tags": []
+}
